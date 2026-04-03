@@ -1,0 +1,35 @@
+name: Build OpenSplat for macOS
+on:
+  workflow_dispatch: # 手动点一下就开始编译
+
+jobs:
+  build-macos:
+    runs-on: macos-14 # GitHub 官方 macOS 机器
+    steps:
+      - name: Checkout OpenSplat
+        uses: actions/checkout@v4
+        with:
+          repository: pierotofy/OpenSplat
+          path: OpenSplat
+
+      - name: Install dependencies
+        run: |
+          brew install cmake opencv pytorch
+
+      - name: Build with MPS GPU Support
+        run: |
+          cd OpenSplat
+          mkdir build && cd build
+          cmake -DGPU_RUNTIME=MPS ..
+          make -j$(sysctl -n hw.logicalcpu)
+
+      - name: Zip output
+        run: |
+          cd OpenSplat/build
+          zip opensplat-mac.zip opensplat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opensplat-mac
+          path: OpenSplat/build/opensplat-mac.zip
